@@ -441,7 +441,7 @@ print '<div class="seup-modal" id="omotPreviewModal">';
 print '<div class="seup-modal-content" style="max-width: 800px; max-height: 90vh;">';
 print '<div class="seup-modal-header">';
 print '<h5 class="seup-modal-title"><i class="fas fa-eye me-2"></i>Prepregled Omota Spisa</h5>';
-print '<button type="button" class="seup-modal-close-btn" id="closeOmotModal"><i class="fas fa-times"></i></button>';
+print '<button type="button" class="seup-modal-close" id="closeOmotModal">&times;</button>';
 print '</div>';
 print '<div class="seup-modal-body" style="max-height: 70vh; overflow-y: auto;">';
 print '<div id="omotPreviewContent">';
@@ -683,22 +683,12 @@ document.addEventListener("DOMContentLoaded", function() {
             if (data.success) {
                 previewContent.innerHTML = data.preview_html;
             } else {
-                previewContent.innerHTML = `
-                    <div class="seup-error-message">
-                        <i class="fas fa-exclamation-triangle"></i>
-                        <p>Greška pri učitavanju: ${data.error || 'Nepoznata greška'}</p>
-                    </div>
-                `;
+                previewContent.innerHTML = '<div class="seup-alert seup-alert-error">Greška pri učitavanju prepregleda: ' + (data.error || 'Nepoznata greška') + '</div>';
             }
         })
         .catch(error => {
             console.error('Preview error:', error);
-            previewContent.innerHTML = `
-                <div class="seup-error-message">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <p>Došlo je do greške pri učitavanju predpregleda</p>
-                </div>
-            `;
+            previewContent.innerHTML = '<div class="seup-alert seup-alert-error">Došlo je do greške pri učitavanju predpregleda</div>';
         });
     }
 
