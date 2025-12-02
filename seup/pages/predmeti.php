@@ -326,9 +326,9 @@ if (count($predmeti)) {
         // Action buttons
         print '<td class="seup-table-td">';
         print '<div class="seup-action-buttons">';
-        print '<a href="' . $url . '" class="seup-action-btn seup-btn-view" title="Pregled detalja">';
+        print '<button class="seup-action-btn seup-btn-view" title="Pregled omota" data-id="' . $predmet->ID_predmeta . '">';
         print '<i class="fas fa-eye"></i>';
-        print '</a>';
+        print '</button>';
         print '<button class="seup-action-btn seup-btn-edit" title="Uredi" data-id="' . $predmet->ID_predmeta . '">';
         print '<i class="fas fa-edit"></i>';
         print '</button>';
@@ -430,6 +430,27 @@ print '<div class="seup-modal-footer">';
 print '<button type="button" class="seup-btn seup-btn-secondary" id="cancelArchiveBtn">Odustani</button>';
 print '<button type="button" class="seup-btn seup-btn-danger" id="confirmArchiveBtn">';
 print '<i class="fas fa-archive me-2"></i>Arhiviraj';
+print '</button>';
+print '</div>';
+print '</div>';
+print '</div>';
+
+// Modal za prepregled omota spisa
+print '<div class="seup-modal" id="omotPreviewModal">';
+print '<div class="seup-modal-content" style="max-width: 800px; max-height: 90vh;">';
+print '<div class="seup-modal-header">';
+print '<h5 class="seup-modal-title"><i class="fas fa-eye me-2"></i>Prepregled Omota Spisa</h5>';
+print '<button type="button" class="seup-modal-close" id="closeOmotModal">&times;</button>';
+print '</div>';
+print '<div class="seup-modal-body" style="max-height: 70vh; overflow-y: auto;">';
+print '<div id="omotPreviewContent">';
+print '<div class="seup-loading-message"><i class="fas fa-spinner fa-spin"></i> Učitavam prepregled...</div>';
+print '</div>';
+print '</div>';
+print '<div class="seup-modal-footer">';
+print '<button type="button" class="seup-btn seup-btn-secondary" id="closePreviewBtn">Zatvori</button>';
+print '<button type="button" class="seup-btn seup-btn-primary" id="generateFromPreviewBtn">';
+print '<i class="fas fa-file-pdf me-2"></i>Generiraj PDF';
 print '</button>';
 print '</div>';
 print '</div>';
@@ -544,6 +565,13 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     // Action button handlers
+    document.querySelectorAll('.seup-btn-view').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const predmetId = this.dataset.id;
+            openOmotPreviewModal(predmetId);
+        });
+    });
+
     document.querySelectorAll('.seup-btn-edit').forEach(btn => {
         btn.addEventListener('click', function() {
             const id = this.dataset.id;
@@ -629,6 +657,90 @@ document.addEventListener("DOMContentLoaded", function() {
         // Show modal
         document.getElementById('archiveModal').classList.add('show');
     }
+
+    // Omot Preview Modal Functionality
+    let currentPreviewPredmetId = null;
+
+    function openOmotPreviewModal(predmetId) {
+        currentPreviewPredmetId = predmetId;
+        const modal = document.getElementById('omotPreviewModal');
+        const previewContent = document.getElementById('omotPreviewContent');
+
+        modal.style.display = 'flex';
+        previewContent.innerHTML = '<div class="seup-loading-message"><i class="fas fa-spinner fa-spin"></i> Učitavam prepregled...</div>';
+
+        const formData = new FormData();
+        formData.append('action', 'preview_omot');
+        formData.append('case_id', predmetId);
+
+        fetch('/custom/seup/pages/predmet.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                previewContent.innerHTML = data.html;
+            } else {
+                previewContent.innerHTML = `
+                    <div class="seup-error-message">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Greška pri učitavanju: ${data.error || 'Nepoznata greška'}</p>
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Preview error:', error);
+            previewContent.innerHTML = `
+                <div class="seup-error-message">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <p>Došlo je do greške pri učitavanju predpregleda</p>
+                </div>
+            `;
+        });
+    }
+
+    function closeOmotPreviewModal() {
+        const modal = document.getElementById('omotPreviewModal');
+        modal.style.display = 'none';
+        currentPreviewPredmetId = null;
+    }
+
+    document.getElementById('closeOmotModal')?.addEventListener('click', closeOmotPreviewModal);
+    document.getElementById('closePreviewBtn')?.addEventListener('click', closeOmotPreviewModal);
+
+    document.getElementById('generateFromPreviewBtn')?.addEventListener('click', function() {
+        if (!currentPreviewPredmetId) return;
+
+        this.classList.add('seup-loading');
+
+        const formData = new FormData();
+        formData.append('action', 'generate_omot');
+        formData.append('case_id', currentPreviewPredmetId);
+
+        fetch('/custom/seup/pages/predmet.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showMessage('PDF uspješno generiran!', 'success');
+                window.open(data.pdf_url, '_blank');
+                closeOmotPreviewModal();
+            } else {
+                showMessage('Greška pri generiranju PDF-a: ' + (data.error || 'Nepoznata greška'), 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Generate error:', error);
+            showMessage('Došlo je do greške pri generiranju PDF-a', 'error');
+        })
+        .finally(() => {
+            this.classList.remove('seup-loading');
+        });
+    });
 
     function closeArchiveModal() {
         document.getElementById('archiveModal').classList.remove('show');
@@ -1311,6 +1423,38 @@ document.addEventListener("DOMContentLoaded", function() {
     opacity: 0;
     transform: translateX(-100px);
   }
+}
+
+.seup-loading-message,
+.seup-error-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.seup-loading-message i {
+  font-size: 48px;
+  margin-bottom: 20px;
+  color: var(--primary-color);
+}
+
+.seup-error-message {
+  color: var(--error-color);
+}
+
+.seup-error-message i {
+  font-size: 48px;
+  margin-bottom: 20px;
+  color: var(--error-color);
+}
+
+.seup-error-message p {
+  font-size: 16px;
+  margin: 0;
 }
 </style>
 
