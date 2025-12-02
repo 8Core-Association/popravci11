@@ -152,6 +152,7 @@ print '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>';
 print '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">';
 print '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">';
 print '<link href="/custom/seup/css/seup-modern.css" rel="stylesheet">';
+print '<link href="/custom/seup/css/setup-modal.css" rel="stylesheet">';
 
 // Main hero section
 print '<main class="seup-settings-hero">';
@@ -440,7 +441,7 @@ print '<div class="seup-modal" id="omotPreviewModal">';
 print '<div class="seup-modal-content" style="max-width: 800px; max-height: 90vh;">';
 print '<div class="seup-modal-header">';
 print '<h5 class="seup-modal-title"><i class="fas fa-eye me-2"></i>Prepregled Omota Spisa</h5>';
-print '<button type="button" class="seup-modal-close" id="closeOmotModal">&times;</button>';
+print '<button type="button" class="seup-modal-close-btn" id="closeOmotModal"><i class="fas fa-times"></i></button>';
 print '</div>';
 print '<div class="seup-modal-body" style="max-height: 70vh; overflow-y: auto;">';
 print '<div id="omotPreviewContent">';
@@ -666,7 +667,7 @@ document.addEventListener("DOMContentLoaded", function() {
         const modal = document.getElementById('omotPreviewModal');
         const previewContent = document.getElementById('omotPreviewContent');
 
-        modal.style.display = 'flex';
+        modal.classList.add('show');
         previewContent.innerHTML = '<div class="seup-loading-message"><i class="fas fa-spinner fa-spin"></i> Učitavam prepregled...</div>';
 
         const formData = new FormData();
@@ -680,7 +681,7 @@ document.addEventListener("DOMContentLoaded", function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                previewContent.innerHTML = data.html;
+                previewContent.innerHTML = data.preview_html;
             } else {
                 previewContent.innerHTML = `
                     <div class="seup-error-message">
@@ -703,12 +704,18 @@ document.addEventListener("DOMContentLoaded", function() {
 
     function closeOmotPreviewModal() {
         const modal = document.getElementById('omotPreviewModal');
-        modal.style.display = 'none';
+        modal.classList.remove('show');
         currentPreviewPredmetId = null;
     }
 
     document.getElementById('closeOmotModal')?.addEventListener('click', closeOmotPreviewModal);
     document.getElementById('closePreviewBtn')?.addEventListener('click', closeOmotPreviewModal);
+
+    document.getElementById('omotPreviewModal')?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeOmotPreviewModal();
+        }
+    });
 
     document.getElementById('generateFromPreviewBtn')?.addEventListener('click', function() {
         if (!currentPreviewPredmetId) return;
