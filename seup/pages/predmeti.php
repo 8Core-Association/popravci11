@@ -672,7 +672,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         const formData = new FormData();
         formData.append('action', 'preview_omot');
-        formData.append('case_id', predmetId);
+        formData.append('id', predmetId);
 
         fetch('/custom/seup/pages/predmet.php', {
             method: 'POST',
@@ -714,7 +714,7 @@ document.addEventListener("DOMContentLoaded", function() {
 
         const formData = new FormData();
         formData.append('action', 'generate_omot');
-        formData.append('case_id', currentPreviewPredmetId);
+        formData.append('id', currentPreviewPredmetId);
 
         fetch('/custom/seup/pages/predmet.php', {
             method: 'POST',
